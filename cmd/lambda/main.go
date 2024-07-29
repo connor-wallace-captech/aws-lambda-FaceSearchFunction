@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/url"
 	"os"
-	"strings"
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
@@ -31,7 +30,7 @@ func handler(ctx context.Context, event Event) (string, error) {
 
 	// Get s3 info from event
 	srcBucket := event.S3Bucket
-	srcKey, err := url.QueryUnescape(strings.Replace(event.S3Key, "+", " ", -1))
+	srcKey, err := url.QueryUnescape(event.S3Key)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode S3 key: %v", err)
 	}
