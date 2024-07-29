@@ -60,7 +60,7 @@ func handler(ctx context.Context, event Event) error {
 		return &FaceAlreadyExistsError{}
 	}
 
-	// On no matches return sucess/nil error
+	// On no matches return success/nil error
 	return nil
 }
 
