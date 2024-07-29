@@ -25,14 +25,14 @@ func (e *FaceAlreadyExistsError) Error() string {
 	return "Face in the picture is already in the system."
 }
 
-func handler(ctx context.Context, event Event) (string, error) {
+func handler(ctx context.Context, event Event) error {
 	log.Println("Reading input from event:", event)
 
 	// Get s3 info from event
 	srcBucket := event.S3Bucket
 	srcKey, err := url.QueryUnescape(event.S3Key)
 	if err != nil {
-		return "", fmt.Errorf("failed to decode S3 key: %v", err)
+		return fmt.Errorf("failed to decode S3 key: %v", err)
 	}
 
 	// Initialze session
@@ -50,18 +50,18 @@ func handler(ctx context.Context, event Event) (string, error) {
 	// Call search
 	result, err := rekognitionClient.SearchFacesByImage(params)
 	if err != nil {
-		return "", fmt.Errorf("failed to search faces by image: %v", err)
+		return fmt.Errorf("failed to search faces by image: %v", err)
 	}
 
 	log.Println("Search results:", result)
 
 	// If matches exist, return error
 	if len(result.FaceMatches) > 0 {
-		return "", &FaceAlreadyExistsError{}
+		return &FaceAlreadyExistsError{}
 	}
 
 	// On no matches return sucess/nil error
-	return "No matching faces found.", nil
+	return nil
 }
 
 func main() {
