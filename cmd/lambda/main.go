@@ -19,6 +19,7 @@ type Event struct {
 	S3Key    string `json:"s3Key"`
 }
 
+// Custom error type: empty struct with required Error method
 type FaceAlreadyExistsError struct{}
 
 func (e *FaceAlreadyExistsError) Error() string {
@@ -28,15 +29,18 @@ func (e *FaceAlreadyExistsError) Error() string {
 func handler(ctx context.Context, event Event) (string, error) {
 	log.Println("Reading input from event:", event)
 
+	// Get s3 info from event
 	srcBucket := event.S3Bucket
 	srcKey, err := url.QueryUnescape(strings.Replace(event.S3Key, "+", " ", -1))
 	if err != nil {
 		return "", fmt.Errorf("failed to decode S3 key: %v", err)
 	}
 
+	// Initialze session
 	sess := session.Must(session.NewSession())
 	rekognitionClient := rekognition.New(sess)
 
+	// Format call info
 	params := &rekognition.SearchFacesByImageInput{
 		CollectionId:       aws.String(os.Getenv("REKOGNITION_COLLECTION_ID")),
 		Image:              &rekognition.Image{S3Object: &rekognition.S3Object{Bucket: aws.String(srcBucket), Name: aws.String(srcKey)}},
@@ -44,6 +48,7 @@ func handler(ctx context.Context, event Event) (string, error) {
 		MaxFaces:           aws.Int64(3),
 	}
 
+	// Call search
 	result, err := rekognitionClient.SearchFacesByImage(params)
 	if err != nil {
 		return "", fmt.Errorf("failed to search faces by image: %v", err)
@@ -51,10 +56,12 @@ func handler(ctx context.Context, event Event) (string, error) {
 
 	log.Println("Search results:", result)
 
+	// If matches exist, return error
 	if len(result.FaceMatches) > 0 {
 		return "", &FaceAlreadyExistsError{}
 	}
 
+	// On no matches return sucess/nil error
 	return "No matching faces found.", nil
 }
 
